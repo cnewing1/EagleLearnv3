@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Math Masters - Multiplication Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', 'Arial Rounded MT Bold', sans-serif;
+            overflow: hidden;
+            touch-action: none;
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1442 50%, #2d1b69 100%);
+        }
+
+        .container {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .stars {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            z-index: 0;
+        }
+
+        .star {
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+            animation: twinkle 3s infinite;
+        }
+
+        @keyframes twinkle {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+
+        .screen {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 800px;
+            width: 90%;
+            z-index: 10;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(-50px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h1 {
+            color: #ff6b6b;
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.2);
+        }
+
+        h2 {
+            color: #4ecdc4;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.3em;
+            border-radius: 50px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            transition: all 0.3s;
+            font-weight: bold;
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+        }
+
+        .table-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px;
+            margin: 30px 0;
+        }
+
+        .table-btn {
+            padding: 20px;
+            font-size: 1.5em;
+            border-radius: 15px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .table-btn.completed {
+            background: linear-gradient(135deg, #56ab2f 0%, #a8e063 100%);
+        }
+
+        .table-btn:hover {
+            transform: translateY(-3px) scale(1.05);
+            box-shadow: 0 8px 20px rgba(0,0,0,0.3);
+        }
+
+        .lives {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin: 20px 0;
+            font-size: 2em;
+        }
+
+        .heart {
+            color: #ff6b6b;
+        }
+
+        .question-area {
+            text-align: center;
+            margin: 40px 0;
+        }
+
+        .question {
+            font-size: 3em;
+            color: #2d3436;
+            margin-bottom: 30px;
+            font-weight: bold;
+        }
+
+        .answer-input {
+            width: 200px;
+            padding: 20px;
+            font-size: 2em;
+            text-align: center;
+            border: 4px solid #4ecdc4;
+            border-radius: 15px;
+        }
+
+        .feedback {
+            font-size: 1.5em;
+            margin-top: 20px;
+            min-height: 40px;
+            font-weight: bold;
+        }
+
+        .correct { color: #00b894; }
+        .incorrect { color: #d63031; }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            transition: width 0.5s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        .hidden { display: none; }
+
+        .user-info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(255,255,255,0.9);
+            padding: 15px 25px;
+            border-radius: 15px;
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #2d3436;
+            z-index: 20;
+        }
+    </style>
+</head>
+<body>
+    <div class="stars" id="stars"></div>
+    <div class="container">
+        <div class="user-info" id="userInfo"></div>
+
+        <!-- Table Selection -->
+        <div class="screen" id="tableScreen">
+            <h1>🔢 Choose Your Table</h1>
+            <div id="playerProgress"></div>
+            <div class="table-grid" id="tableGrid"></div>
+            <div style="text-align: center; margin-top: 20px;">
+                <button class="btn" onclick="backToApp()">← Back</button>
+            </div>
+        </div>
+
+        <!-- Quiz Screen -->
+        <div class="screen hidden" id="quizScreen">
+            <h2 id="tableTitle"></h2>
+            <div class="lives" id="lives"></div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progressFill">0/10</div>
+            </div>
+            <div class="question-area">
+                <div class="question" id="question"></div>
+                <input type="number" class="answer-input" id="answerInput" autocomplete="off">
+                <div class="feedback" id="feedback"></div>
+            </div>
+            <div style="text-align: center;">
+                <button class="btn" onclick="submitAnswer()">Submit</button>
+                <button class="btn" onclick="backToTables()" style="background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%); margin-left: 20px;">Exit</button>
+            </div>
+        </div>
+
+        <!-- Completion Screen -->
+        <div class="screen hidden" id="completeScreen">
+            <h1>🎉 Congratulations!</h1>
+            <h2 id="completeMessage"></h2>
+            <div style="text-align: center; margin-top: 30px;">
+                <button class="btn" onclick="backToTables()">Choose Another Table</button>
+                <button class="btn" onclick="backToApp()" style="margin-left: 20px;">Back to LearnBase</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get user from URL params
+        const urlParams = new URLSearchParams(window.location.search);
+        const currentUser = urlParams.get('user') || 'Player';
+
+        // Game State
+        let currentTable = 1;
+        let lives = 3;
+        let currentQuestion = 0;
+        let totalQuestions = 10;
+        let num1, num2, correctAnswer;
+        let gameData = {};
+
+        function init() {
+            loadGameData();
+            createStars();
+            document.getElementById('userInfo').textContent = `Player: ${currentUser}`;
+            renderTableGrid();
+            showScreen('tableScreen');
+            
+            document.getElementById('answerInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') submitAnswer();
+            });
+        }
+
+        function createStars() {
+            const starsContainer = document.getElementById('stars');
+            for (let i = 0; i < 100; i++) {
+                const star = document.createElement('div');
+                star.className = 'star';
+                star.style.width = Math.random() * 3 + 'px';
+                star.style.height = star.style.width;
+                star.style.left = Math.random() * 100 + '%';
+                star.style.top = Math.random() * 100 + '%';
+                star.style.animationDelay = Math.random() * 3 + 's';
+                starsContainer.appendChild(star);
+            }
+        }
+
+        function loadGameData() {
+            const key = 'mathGame_' + currentUser;
+            const saved = localStorage.getItem(key);
+            gameData = saved ? JSON.parse(saved) : { completedTables: [] };
+        }
+
+        function saveGameData() {
+            const key = 'mathGame_' + currentUser;
+            localStorage.setItem(key, JSON.stringify(gameData));
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+            document.getElementById(screenId).classList.remove('hidden');
+        }
+
+        function renderTableGrid() {
+            const grid = document.getElementById('tableGrid');
+            grid.innerHTML = '';
+            
+            for (let i = 1; i <= 10; i++) {
+                const btn = document.createElement('button');
+                btn.className = 'table-btn';
+                btn.textContent = `${i} ×`;
+                
+                if (gameData.completedTables.includes(i)) {
+                    btn.classList.add('completed');
+                    btn.innerHTML = `${i} × ✓`;
+                }
+                
+                btn.onclick = () => startQuiz(i);
+                grid.appendChild(btn);
+            }
+
+            const completed = gameData.completedTables.length;
+            document.getElementById('playerProgress').innerHTML = 
+                `<h2>${currentUser}'s Progress: ${completed}/10 Tables Mastered! 🎯</h2>`;
+        }
+
+        function startQuiz(table) {
+            currentTable = table;
+            currentQuestion = 0;
+            lives = 3;
+            
+            document.getElementById('tableTitle').textContent = `${table} Times Table`;
+            updateLives();
+            showScreen('quizScreen');
+            nextQuestion();
+        }
+
+        function updateLives() {
+            const livesDiv = document.getElementById('lives');
+            livesDiv.innerHTML = '';
+            for (let i = 0; i < lives; i++) {
+                const heart = document.createElement('span');
+                heart.className = 'heart';
+                heart.textContent = '❤️';
+                livesDiv.appendChild(heart);
+            }
+        }
+
+        function nextQuestion() {
+            if (currentQuestion >= totalQuestions) {
+                completeTable();
+                return;
+            }
+            
+            num1 = currentTable;
+            num2 = Math.floor(Math.random() * 10) + 1;
+            correctAnswer = num1 * num2;
+            
+            document.getElementById('question').textContent = `${num1} × ${num2} = ?`;
+            document.getElementById('answerInput').value = '';
+            document.getElementById('answerInput').focus();
+            document.getElementById('feedback').textContent = '';
+            
+            updateProgress();
+        }
+
+        function updateProgress() {
+            const percentage = (currentQuestion / totalQuestions) * 100;
+            const fill = document.getElementById('progressFill');
+            fill.style.width = percentage + '%';
+            fill.textContent = `${currentQuestion}/${totalQuestions}`;
+        }
+
+        function submitAnswer() {
+            const userAnswer = parseInt(document.getElementById('answerInput').value);
+            const feedback = document.getElementById('feedback');
+            
+            if (isNaN(userAnswer)) {
+                feedback.textContent = 'Please enter a number!';
+                feedback.className = 'feedback incorrect';
+                return;
+            }
+            
+            if (userAnswer === correctAnswer) {
+                feedback.textContent = '🎉 Correct!';
+                feedback.className = 'feedback correct';
+                currentQuestion++;
+                setTimeout(nextQuestion, 1500);
+            } else {
+                lives--;
+                updateLives();
+                feedback.textContent = `❌ Wrong! Answer: ${correctAnswer}`;
+                feedback.className = 'feedback incorrect';
+                
+                if (lives <= 0) {
+                    setTimeout(() => {
+                        alert('Game Over! Try again!');
+                        backToTables();
+                    }, 2000);
+                } else {
+                    currentQuestion++;
+                    setTimeout(nextQuestion, 2500);
+                }
+            }
+        }
+
+        function completeTable() {
+            if (!gameData.completedTables.includes(currentTable)) {
+                gameData.completedTables.push(currentTable);
+                saveGameData();
+            }
+            
+            document.getElementById('completeMessage').textContent = 
+                `You mastered the ${currentTable} times table!`;
+            showScreen('completeScreen');
+        }
+
+        function backToTables() {
+            renderTableGrid();
+            showScreen('tableScreen');
+        }
+
+        function backToApp() {
+            window.history.back();
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>
