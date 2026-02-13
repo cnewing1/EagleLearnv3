@@ -260,82 +260,102 @@ function backToMenu(){
 }
 
 /* ================= MINI GAME ================= */
-
 function startMiniGame(isBoss=false){
 
     document.getElementById("gameScreen").classList.add("hidden");
     document.getElementById("miniGameScreen").classList.remove("hidden");
 
-    const canvas=document.getElementById("flappyCanvas");
-    const ctx=canvas.getContext("2d");
+    const canvas = document.getElementById("flappyCanvas");
+    const ctx = canvas.getContext("2d");
 
-    let y=250, velocity=0, gravity=0.6;
-    let pipes=[], lives=3, score=0;
-    let cloudX=0;
+    // 🔥 Make canvas full screen
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 
-    let speed=isBoss?6:3+Math.floor(correctCount/10);
-    let gap=isBoss?90:170-Math.floor(correctCount/5);
-    if(gap<100) gap=100;
+    let y = canvas.height / 2;
+    let velocity = 0;
+    let gravity = 0.5;   // softer gravity
+    let flapPower = -10; // stronger flap
+
+    let pipes = [];
+    let lives = 3;
+    let score = 0;
+
+    let speed = isBoss ? 5 : 2.5;   // slower = easier
+    let gap = isBoss ? 140 : 200;   // bigger gap = easier
 
     function spawnPipe(){
-        pipes.push({x:400,gap:gap,top:Math.random()*250+50,passed:false});
+        pipes.push({
+            x: canvas.width,
+            top: Math.random() * (canvas.height - 300) + 50,
+            passed: false
+        });
     }
 
-    let pipeInterval=setInterval(spawnPipe,2000);
+    let pipeInterval = setInterval(spawnPipe, 1800);
 
     function flap(){
-        velocity=-9;
-        flapSound.currentTime=0;
+        velocity = flapPower;
+        flapSound.currentTime = 0;
         flapSound.play();
     }
 
-    document.addEventListener("click",flap);
-    document.addEventListener("touchstart",flap);
+    // 📱 Touch only (prevents double-trigger on iPad)
+    canvas.addEventListener("touchstart", flap);
 
     function loop(){
-        ctx.clearRect(0,0,400,500);
 
-        cloudX-=1;
-        ctx.fillStyle="white";
-        ctx.fillRect((cloudX%400),60,80,30);
+        ctx.clearRect(0,0,canvas.width,canvas.height);
 
-        velocity+=gravity;
-        y+=velocity;
+        velocity += gravity;
+        y += velocity;
 
-        ctx.font="40px Arial";
-        ctx.fillText("🦅",60,y);
+        // 🦅 Bigger eagle
+        ctx.font = "60px Arial";
+        ctx.fillText("🦅", 100, y);
 
-        pipes.forEach(pipe=>{
-            pipe.x-=speed;
+        pipes.forEach(pipe => {
 
-            ctx.fillStyle=isBoss?"red":"#4a2f00";
-            ctx.fillRect(pipe.x,0,60,pipe.top);
-            ctx.fillRect(pipe.x,pipe.top+pipe.gap,60,500);
+            pipe.x -= speed;
 
-            if(!pipe.passed && pipe.x<60){
+            ctx.fillStyle = isBoss ? "red" : "#4a2f00";
+
+            // Top pipe
+            ctx.fillRect(pipe.x, 0, 80, pipe.top);
+
+            // Bottom pipe
+            ctx.fillRect(pipe.x, pipe.top + gap, 80, canvas.height);
+
+            // Score
+            if(!pipe.passed && pipe.x < 100){
                 score++;
-                pipe.passed=true;
+                pipe.passed = true;
             }
 
-            if(60+30>pipe.x && 60<pipe.x+60){
-                if(y<pipe.top || y>pipe.top+pipe.gap){
+            // Collision detection
+            if(100 + 40 > pipe.x && 100 < pipe.x + 80){
+                if(y < pipe.top || y > pipe.top + gap){
                     lives--;
-                    y=250; velocity=0; pipes=[];
+                    y = canvas.height / 2;
+                    velocity = 0;
+                    pipes = [];
                 }
             }
         });
 
-        ctx.fillStyle="black";
-        ctx.fillText("Lives:"+lives,10,20);
-        ctx.fillText("Score:"+score,300,20);
+        // UI overlay
+        ctx.fillStyle = "black";
+        ctx.font = "24px Arial";
+        ctx.fillText("Lives: " + lives, 20, 40);
+        ctx.fillText("Score: " + score, canvas.width - 140, 40);
 
-        if(lives<=0){
+        if(lives <= 0){
+
             clearInterval(pipeInterval);
-            document.removeEventListener("click",flap);
-            document.removeEventListener("touchstart",flap);
+            canvas.removeEventListener("touchstart", flap);
 
-            if(score>=10){
-                bonusActive=true;
+            if(score >= 8){
+                bonusActive = true;
                 alert("🔥 Bonus Mode Activated! Double points!");
             }
 
@@ -343,6 +363,7 @@ function startMiniGame(isBoss=false){
                 document.getElementById("miniGameScreen").classList.add("hidden");
                 document.getElementById("gameScreen").classList.remove("hidden");
             },1200);
+
             return;
         }
 
@@ -351,7 +372,6 @@ function startMiniGame(isBoss=false){
 
     loop();
 }
-
 /* ================= INIT ================= */
 
 loadProgress();
