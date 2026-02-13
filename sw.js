@@ -1,4 +1,4 @@
-const CACHE_NAME = 'eaglelearn-v1';
+const CACHE_NAME = 'eaglelearn-v3';
 const ASSETS = [
   './index.html',
   './manifest.json',
@@ -26,3 +26,4 @@ self.addEventListener('fetch', e => {
     caches.match(e.request).then(cached => cached || fetch(e.request))
   );
 });
+
