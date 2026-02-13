@@ -1,4 +1,4 @@
-const CACHE_NAME = 'learnbase-v1';
+const CACHE_NAME = 'eaglelearn-v1';
 const ASSETS = [
   './index.html',
   './manifest.json',
@@ -23,6 +23,6 @@ self.addEventListener('activate', e => {
 
 self.addEventListener('fetch', e => {
   e.respondWith(
-    caches.match(e.request).then(cached => cached || fetch(e.request).catch(() => cached))
+    caches.match(e.request).then(cached => cached || fetch(e.request))
   );
 });
