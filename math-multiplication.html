@@ -86,6 +86,10 @@ canvas{
 
 <h2>Select Level (1-10)</h2>
 <div id="levels"></div>
+<h2>🏆 Top Eagle Scores</h2>
+<div id="leaderboard"></div>
+
+    
 </div>
 
 <!-- GAME -->
@@ -376,6 +380,42 @@ function startMiniGame(isBoss=false){
 
 loadProgress();
 displayMedals();
+
+    let leaderboard = [];
+const leaderboardKey = "eagleLeaderboard";
+
+function loadLeaderboard(){
+    const saved = localStorage.getItem(leaderboardKey);
+    if(saved){
+        leaderboard = JSON.parse(saved);
+    }
+}
+
+function saveLeaderboard(){
+    localStorage.setItem(leaderboardKey, JSON.stringify(leaderboard));
+}
+
+function updateLeaderboardDisplay(){
+    const board = document.getElementById("leaderboard");
+    if(!board) return;
+
+    if(leaderboard.length === 0){
+        board.innerHTML = "<p>No scores yet!</p>";
+        return;
+    }
+
+    board.innerHTML = leaderboard
+        .map((score, index) => `<p>#${index+1} — ${score}</p>`)
+        .join("");
+}
+
+function addScoreToLeaderboard(score){
+    leaderboard.push(score);
+    leaderboard.sort((a,b)=>b-a);
+    leaderboard = leaderboard.slice(0,5); // keep top 5
+    saveLeaderboard();
+    updateLeaderboardDisplay();
+}
 
 </script>
 
