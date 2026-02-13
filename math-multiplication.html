@@ -1,64 +1,57 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EagleLearn – Multiply & Divide</title>
-
-<style>
-body{
-    font-family: Arial, sans-serif;
-    margin:0;
-    background:linear-gradient(135deg,#0b1f3a,#1f3b73,#b8860b);
-    color:#fff;
-    text-align:center;
-}
-.screen{
-    padding:30px;
-}
-.hidden{display:none;}
-button{
-    padding:15px 25px;
-    margin:10px;
-    font-size:18px;
-    border:none;
-    border-radius:10px;
-    cursor:pointer;
-}
-.modeBtn{background:#b8860b;color:#000;}
-.levelBtn{background:#1f3b73;color:#fff;}
-.correct{color:lime;}
-.incorrect{color:red;}
-</style>
-</head>
-
-<body>
-
-<div class="screen" id="menuScreen">
-<h1>🦅 EagleLearn</h1>
-<h2>Choose Mode</h2>
-
-<button class="modeBtn" onclick="setMode('multiply')">✖ Multiply</button>
-<button class="modeBtn" onclick="setMode('divide')">➗ Divide</button>
-
-<h2>Select Level (1-10)</h2>
-<div id="levels"></div>
-</div>
-
-<div class="screen hidden" id="gameScreen">
-<h2 id="modeTitle"></h2>
-<h3 id="question"></h3>
-<input type="number" id="answer" />
-<br><br>
-<button onclick="submitAnswer()">Submit</button>
-<p id="feedback"></p>
-<button onclick="backToMenu()">Back</button>
-</div>
-
 <script>
+
 let currentMode = "multiply";
 let currentLevel = 1;
 let correctAnswer;
+let correctCount = 0;
+let medalsEarned = [];
+
+const correctSound = new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg");
+const funnyWrongSound = new Audio("https://actions.google.com/sounds/v1/cartoon/boing.ogg");
+
+const userKey = "eagleLearnMedals";
+
+function loadProgress(){
+    const saved = localStorage.getItem(userKey);
+    if(saved){
+        const data = JSON.parse(saved);
+        correctCount = data.correctCount || 0;
+        medalsEarned = data.medalsEarned || [];
+    }
+}
+
+function saveProgress(){
+    localStorage.setItem(userKey, JSON.stringify({
+        correctCount,
+        medalsEarned
+    }));
+}
+
+function displayMedals(){
+    const medalDiv = document.getElementById("medals");
+    if(!medalDiv) return;
+
+    medalDiv.innerHTML = medalsEarned.join(" ");
+}
+
+function checkMedals(){
+    const medalLevels = [
+        {count:5, icon:"🥉"},
+        {count:15, icon:"🥈"},
+        {count:30, icon:"🥇"},
+        {count:50, icon:"🦅"}
+    ];
+
+    medalLevels.forEach(m=>{
+        if(correctCount >= m.count && !medalsEarned.includes(m.icon)){
+            medalsEarned.push(m.icon);
+            alert("🏅 New Medal Earned! " + m.icon);
+        }
+    });
+
+    saveProgress();
+    displayMedals();
+}
 
 function setMode(mode){
     currentMode = mode;
@@ -67,7 +60,7 @@ function setMode(mode){
 function buildLevels(){
     const container = document.getElementById("levels");
     for(let i=1;i<=10;i++){
-        const btn = document.createElement("button");
+        const btn=document.createElement("button");
         btn.className="levelBtn";
         btn.textContent="Level "+i;
         btn.onclick=()=>startGame(i);
@@ -112,13 +105,24 @@ function nextQuestion(){
 
 function submitAnswer(){
     const user=parseInt(document.getElementById("answer").value);
+
     if(user===correctAnswer){
+        correctSound.currentTime = 0;
+        correctSound.play();
+
+        correctCount++;
+        checkMedals();
+
         document.getElementById("feedback").textContent="🦅 Correct!";
         document.getElementById("feedback").className="correct";
+
         setTimeout(nextQuestion,1000);
     }else{
+        funnyWrongSound.currentTime = 0;
+        funnyWrongSound.play();
+
         document.getElementById("feedback").textContent=
-            "❌ Wrong! Answer: "+correctAnswer;
+            "😄 Oops! Answer: "+correctAnswer;
         document.getElementById("feedback").className="incorrect";
     }
 }
@@ -127,7 +131,8 @@ function backToMenu(){
     document.getElementById("gameScreen").classList.add("hidden");
     document.getElementById("menuScreen").classList.remove("hidden");
 }
-</script>
 
-</body>
-</html>
+loadProgress();
+displayMedals();
+
+</script>
