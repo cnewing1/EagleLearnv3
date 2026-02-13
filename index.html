@@ -622,10 +622,6 @@ input:focus, select:focus, textarea:focus {
   z-index: 1;
 }
 
-<button onclick="clearAppCache()" 
-style="padding:15px 25px; font-size:18px; border-radius:10px; background:#b8860b; border:none; margin-top:20px;">
-🧹 Clear App Cache
-</button>
    
 .admin-header {
   display: flex;
@@ -1205,6 +1201,12 @@ style="padding:15px 25px; font-size:18px; border-radius:10px; background:#b8860b
       </div>
     </div>
 
+<div style="margin-top:40px; text-align:center;">
+  <button class="btn btn-danger btn-lg" onclick="clearAppCache()">
+    🧹 Clear App Cache
+  </button>
+</div>
+     
   </div>
 </div>
 
@@ -1915,6 +1917,7 @@ boot();
 </script>
 </body>
 </html>
+
 
 
 
