@@ -1261,6 +1261,27 @@ style="padding:15px 25px; font-size:18px; border-radius:10px; background:#b8860b
 // ============================================================
 
 
+
+   async function clearAppCache() {
+
+    const confirmClear = confirm("This will clear app cache and saved data. Continue?");
+    if (!confirmClear) return;
+
+    // Clear localStorage
+    localStorage.clear();
+
+    // Clear Service Worker cache
+    if ('caches' in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map(key => caches.delete(key)));
+    }
+
+    alert("Cache cleared successfully! Reloading...");
+
+    // Reload without cache
+    window.location.reload(true);
+}
+
 const eagleSound = new Audio("https://actions.google.com/sounds/v1/animals/bald_eagle_call.ogg");
 
    
@@ -1888,5 +1909,6 @@ boot();
 </script>
 </body>
 </html>
+
 
 
