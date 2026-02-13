@@ -358,6 +358,8 @@ function startMiniGame(isBoss=false){
             clearInterval(pipeInterval);
             canvas.removeEventListener("touchstart", flap);
 
+            addScoreToLeaderboard(score);
+
             if(score >= 8){
                 bonusActive = true;
                 alert("🔥 Bonus Mode Activated! Double points!");
@@ -376,12 +378,11 @@ function startMiniGame(isBoss=false){
 
     loop();
 }
-/* ================= INIT ================= */
 
-loadProgress();
-displayMedals();
 
-    let leaderboard = [];
+    /* ================= LEADERBOARD ================= */
+
+let leaderboard = [];
 const leaderboardKey = "eagleLeaderboard";
 
 function loadLeaderboard(){
@@ -412,12 +413,15 @@ function updateLeaderboardDisplay(){
 function addScoreToLeaderboard(score){
     leaderboard.push(score);
     leaderboard.sort((a,b)=>b-a);
-    leaderboard = leaderboard.slice(0,5); // keep top 5
+    leaderboard = leaderboard.slice(0,5);
     saveLeaderboard();
     updateLeaderboardDisplay();
 }
 
-</script>
 
-</body>
-</html>
+/* ================= INIT ================= */
+
+loadProgress();
+displayMedals();
+loadLeaderboard();
+updateLeaderboardDisplay();
