@@ -1254,6 +1254,11 @@ input:focus, select:focus, textarea:focus {
 // ============================================================
 // DATA STORE — uses localStorage for persistence
 // ============================================================
+
+
+const eagleSound = new Audio("https://actions.google.com/sounds/v1/animals/bald_eagle_call.ogg");
+
+   
 const DB = {
   get: (key, fallback = null) => {
     try {
@@ -1438,6 +1443,8 @@ function showAdmin() {
 // USER SELECTION
 // ============================================================
 function selectUser(userId) {
+   eagleSound.currentTime = 0;
+eagleSound.play();
   const users = DB.get('users');
   if (!users[userId]) return;
   currentUser = userId;
@@ -1876,3 +1883,4 @@ boot();
 </script>
 </body>
 </html>
+
