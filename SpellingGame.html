@@ -1292,15 +1292,6 @@ function guessLetter(letter, keyId) {
         }
     }
 }
-            document.getElementById('hangmanFeedback').textContent = `😔 The word was: ${currentWord}`;
-            document.getElementById('hangmanFeedback').className = 'incorrect';
-            document.getElementById('wordDisplay').textContent = currentWord.split('').join(' ');
-            
-            currentWordIndex++;
-            setTimeout(startHangmanRound, 3000);
-        }
-    }
-}
 
 function drawHangman() {
     const canvas = document.getElementById('hangmanCanvas');
