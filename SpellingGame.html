@@ -996,7 +996,6 @@ function selectMode(mode) {
         startScrambleRound();
     } else if (mode === 'hangman') {
         document.getElementById('hangmanScreen').classList.remove('hidden');
-        initKeyboard();
         startHangmanRound();
     } else if (mode === 'fillblank') {
         document.getElementById('fillBlankScreen').classList.remove('hidden');
@@ -1146,20 +1145,41 @@ function initKeyboard() {
     // Get all characters that appear in the spelling list
     const characters = getAllCharactersInList();
     
-    // If no special characters, just use standard alphabet
-    if (characters.every(c => /[A-Z]/.test(c))) {
-        const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-        keyboard.innerHTML = letters.map(letter => 
-            `<button class="key" onclick="guessLetter('${letter}')" id="key-${letter}">${letter}</button>`
-        ).join('');
-    } else {
-        // Use dynamic character set
-        keyboard.innerHTML = characters.map(char => {
-            const safeId = char === "'" ? 'apostrophe' : char === "-" ? 'hyphen' : char;
-            const display = char === "'" ? "'" : char === "-" ? "-" : char;
-            return `<button class="key" onclick="guessLetter('${char.replace(/'/g, "\\'")}', '${safeId}')" id="key-${safeId}">${display}</button>`;
-        }).join('');
-    }
+    // Clear keyboard first
+    keyboard.innerHTML = '';
+    
+    // Create buttons programmatically with proper event listeners
+    characters.forEach(char => {
+        let safeId, display;
+        
+        if (char === "'") {
+            safeId = 'apostrophe';
+            display = "'";
+        } else if (char === "-") {
+            safeId = 'hyphen';
+            display = "-";
+        } else {
+            safeId = char;
+            display = char;
+        }
+        
+        // Create button element
+        const button = document.createElement('button');
+        button.className = 'key';
+        button.id = `key-${safeId}`;
+        button.textContent = display;
+        button.setAttribute('data-letter', char);
+        
+        // Add click handler
+        button.addEventListener('click', function() {
+            const letter = this.getAttribute('data-letter');
+            const keyId = this.id.replace('key-', '');
+            guessLetter(letter, keyId);
+        });
+        
+        // Add to keyboard
+        keyboard.appendChild(button);
+    });
 }
 
 function startHangmanRound() {
