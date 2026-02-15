@@ -347,6 +347,72 @@ button:active{
     margin:10px 0;
 }
 
+/* Fill in the Blank */
+.sentence-display{
+    background:rgba(255,255,255,0.9);
+    border:3px solid #b8860b;
+    border-radius:15px;
+    padding:30px;
+    margin:30px auto;
+    max-width:700px;
+    font-size:28px;
+    color:#000;
+    font-weight:600;
+    line-height:1.6;
+}
+
+.sentence-blank{
+    display:inline-block;
+    min-width:150px;
+    border-bottom:3px solid #b8860b;
+    padding:0 15px;
+    margin:0 8px;
+    color:#b8860b;
+    font-weight:bold;
+    position:relative;
+}
+
+.sentence-blank::after{
+    content:"?";
+    position:absolute;
+    right:-10px;
+    top:-5px;
+    font-size:20px;
+    color:#b8860b;
+}
+
+.choice-bubbles{
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:20px;
+    margin:30px auto;
+    max-width:800px;
+}
+
+.choice-bubble{
+    background:radial-gradient(circle,#b8860b,#8b6508);
+    color:#000;
+    padding:20px 30px;
+    border-radius:50px;
+    font-size:24px;
+    font-weight:bold;
+    cursor:pointer;
+    transition:0.3s;
+    box-shadow:0 4px 12px rgba(0,0,0,0.3);
+    animation:float 4s ease-in-out infinite;
+    min-width:150px;
+}
+
+.choice-bubble:hover{
+    transform:scale(1.15) translateY(-5px);
+    box-shadow:0 8px 20px rgba(0,0,0,0.4);
+}
+
+.choice-bubble:active{
+    transform:scale(0.95);
+}
+
 /* Responsive */
 @media (max-width: 600px) {
     .scrambled-word{
@@ -378,6 +444,17 @@ button:active{
     .key{
         padding:12px 8px;
         font-size:16px;
+    }
+    
+    .sentence-display{
+        font-size:20px;
+        padding:20px;
+    }
+    
+    .choice-bubble{
+        font-size:18px;
+        padding:15px 20px;
+        min-width:120px;
     }
 }
 </style>
@@ -439,6 +516,12 @@ button:active{
         <span class="emoji">🎯</span>
         <h3>Hangman</h3>
         <p>Guess the word</p>
+    </div>
+    
+    <div class="mode-card" onclick="selectMode('fillblank')">
+        <span class="emoji">📝</span>
+        <h3>Fill in the Blank</h3>
+        <p>Complete the sentence</p>
     </div>
 </div>
 
@@ -526,6 +609,43 @@ button:active{
 <div class="keyboard" id="keyboard"></div>
 
 <p id="hangmanFeedback" style="font-size:24px; min-height:30px;"></p>
+
+<button onclick="exitGame()">← Back to Menu</button>
+```
+
+</div>
+
+<!-- FILL IN THE BLANK SCREEN -->
+
+<div class="screen hidden" id="fillBlankScreen">
+    <h2>📝 Fill in the Blank</h2>
+    <div id="fillBlankMedals" style="font-size:28px;margin-bottom:15px;"></div>
+
+```
+<div class="stats-panel" style="margin:20px auto;">
+    <p style="font-size:20px;">Round <span id="fillBlankRound">1</span> of <span id="fillBlankTotal">0</span></p>
+    <p style="font-size:18px; color:#3fb950;">Score: <strong id="fillBlankScore">0</strong></p>
+</div>
+
+<!-- Speak Button -->
+<div style="margin:20px 0;">
+    <button class="speakBtn" onclick="speakCurrentWord()" title="Click to hear the word">
+        🔊
+    </button>
+    <p style="color:#ccc; font-size:14px; margin-top:10px;">Click to hear the word</p>
+</div>
+
+<!-- Sentence Display -->
+<div class="sentence-display" id="sentenceDisplay">
+    The eagle <span class="sentence-blank">_____</span> high in the sky.
+</div>
+
+<!-- Choice Bubbles -->
+<div class="choice-bubbles" id="choiceBubbles">
+    <!-- Populated by JavaScript -->
+</div>
+
+<p id="fillBlankFeedback" style="font-size:24px; min-height:30px;"></p>
 
 <button onclick="exitGame()">← Back to Menu</button>
 ```
@@ -876,12 +996,16 @@ function selectMode(mode) {
         document.getElementById('hangmanScreen').classList.remove('hidden');
         initKeyboard();
         startHangmanRound();
+    } else if (mode === 'fillblank') {
+        document.getElementById('fillBlankScreen').classList.remove('hidden');
+        startFillBlankRound();
     }
 }
 
 function exitGame() {
     document.getElementById('scrambleScreen').classList.add('hidden');
     document.getElementById('hangmanScreen').classList.add('hidden');
+    document.getElementById('fillBlankScreen').classList.add('hidden');
     document.getElementById('menuScreen').classList.remove('hidden');
     updateStatsDisplay();
 }
@@ -1207,6 +1331,184 @@ function drawHangman() {
         ctx.beginPath();
         ctx.arc(180, 108, 8, 0.2 * Math.PI, 0.8 * Math.PI);
         ctx.stroke();
+    }
+}
+
+// ============================================================
+// FILL IN THE BLANK MODE
+// ============================================================
+
+// Sentence templates - {blank} will be replaced with the spelling word
+const SENTENCE_TEMPLATES = [
+    "The {blank} was very important to remember.",
+    "I need to {blank} my homework before class.",
+    "She showed great {blank} during the presentation.",
+    "The teacher asked us to {blank} the answer.",
+    "We learned about {blank} in science today.",
+    "His {blank} attitude helped everyone feel better.",
+    "The {blank} of the story was very exciting.",
+    "Please {blank} this information carefully.",
+    "They will {blank} the project tomorrow.",
+    "The {blank} solution worked perfectly.",
+    "I can {blank} the difference now.",
+    "We must {blank} our work on time.",
+    "The {blank} was clearly visible.",
+    "She decided to {blank} her opinion.",
+    "Everyone should {blank} to help.",
+    "The {blank} result surprised us all.",
+    "He tried to {blank} the problem.",
+    "We need more {blank} to succeed.",
+    "The {blank} weather made it difficult.",
+    "They will {blank} the ceremony soon."
+];
+
+function generateSentence(word) {
+    // Pick a random sentence template
+    const template = SENTENCE_TEMPLATES[Math.floor(Math.random() * SENTENCE_TEMPLATES.length)];
+    
+    // Replace {blank} with the actual word
+    const sentence = template.replace('{blank}', word);
+    
+    // Return the sentence with HTML blank placeholder
+    const displaySentence = template.replace('{blank}', '<span class="sentence-blank">_____</span>');
+    
+    return { sentence, displaySentence };
+}
+
+function startFillBlankRound() {
+    if (currentWordIndex >= spellingWords.length) {
+        alert(`🎉 Game Complete!\n\nFinal Score: ${score}\nWords Mastered: ${roundsPlayed}/${spellingWords.length}`);
+        exitGame();
+        return;
+    }
+    
+    currentWord = spellingWords[currentWordIndex];
+    
+    // Generate sentence
+    const { displaySentence } = generateSentence(currentWord);
+    
+    document.getElementById('sentenceDisplay').innerHTML = displaySentence;
+    document.getElementById('fillBlankFeedback').textContent = '';
+    document.getElementById('fillBlankRound').textContent = currentWordIndex + 1;
+    document.getElementById('fillBlankTotal').textContent = spellingWords.length;
+    document.getElementById('fillBlankScore').textContent = score;
+    
+    // Generate answer choices
+    generateChoiceBubbles();
+    
+    // Auto-speak the word when round starts
+    setTimeout(() => {
+        speakWord(currentWord);
+    }, 500);
+}
+
+function generateChoiceBubbles() {
+    const container = document.getElementById('choiceBubbles');
+    container.innerHTML = '';
+    
+    // Create answer options (correct word + 3 random wrong words)
+    let choices = [currentWord];
+    
+    // Add 3 random wrong answers from the spelling list
+    const otherWords = spellingWords.filter(w => w !== currentWord);
+    while (choices.length < 4 && otherWords.length > 0) {
+        const randomIndex = Math.floor(Math.random() * otherWords.length);
+        const randomWord = otherWords[randomIndex];
+        if (!choices.includes(randomWord)) {
+            choices.push(randomWord);
+        }
+        otherWords.splice(randomIndex, 1);
+    }
+    
+    // If we don't have enough words in the list, create similar wrong answers
+    while (choices.length < 4) {
+        const wrongWord = createSimilarWord(currentWord);
+        if (!choices.includes(wrongWord)) {
+            choices.push(wrongWord);
+        }
+    }
+    
+    // Shuffle choices
+    choices.sort(() => Math.random() - 0.5);
+    
+    // Create bubble buttons
+    choices.forEach(choice => {
+        const bubble = document.createElement('div');
+        bubble.className = 'choice-bubble';
+        bubble.textContent = choice;
+        bubble.onclick = () => checkFillBlankAnswer(choice, bubble);
+        container.appendChild(bubble);
+    });
+}
+
+function createSimilarWord(word) {
+    // Create a similar-looking wrong answer by modifying the word slightly
+    const modifications = [
+        // Change one letter
+        word.split('').map((c, i) => i === Math.floor(Math.random() * word.length) ? 
+            String.fromCharCode(65 + Math.floor(Math.random() * 26)) : c).join(''),
+        // Add a letter
+        word + String.fromCharCode(65 + Math.floor(Math.random() * 26)),
+        // Remove a letter (if long enough)
+        word.length > 4 ? word.slice(0, -1) : word + 'ED',
+        // Swap two letters
+        word.length > 2 ? word.split('').map((c, i, arr) => {
+            if (i === 1) return arr[2];
+            if (i === 2) return arr[1];
+            return c;
+        }).join('') : word + 'S'
+    ];
+    
+    return modifications[Math.floor(Math.random() * modifications.length)];
+}
+
+function checkFillBlankAnswer(choice, bubble) {
+    const feedback = document.getElementById('fillBlankFeedback');
+    
+    if (choice === currentWord) {
+        correctSound.currentTime = 0;
+        correctSound.play();
+        
+        feedback.textContent = '🦅 Perfect! That\'s correct!';
+        feedback.className = 'correct';
+        
+        score += 10;
+        roundsPlayed++;
+        streak++;
+        masteredWords.add(currentWord);
+        
+        if (streak > bestStreak) {
+            bestStreak = streak;
+        }
+        
+        saveStats();
+        document.getElementById('fillBlankScore').textContent = score;
+        
+        // Visual feedback
+        bubble.style.transform = 'scale(1.3)';
+        bubble.style.opacity = '0.7';
+        
+        // Update sentence to show the correct answer
+        const sentenceDisplay = document.getElementById('sentenceDisplay');
+        sentenceDisplay.innerHTML = sentenceDisplay.innerHTML.replace(
+            '<span class="sentence-blank">_____</span>',
+            `<span style="color:#3fb950; font-weight:bold;">${currentWord}</span>`
+        );
+        
+        currentWordIndex++;
+        setTimeout(startFillBlankRound, 2000);
+    } else {
+        wrongSound.currentTime = 0;
+        wrongSound.play();
+        
+        streak = 0;
+        
+        feedback.textContent = '❌ Not quite! Try again.';
+        feedback.className = 'incorrect';
+        
+        // Visual feedback for wrong choice
+        bubble.style.opacity = '0.3';
+        bubble.style.pointerEvents = 'none';
     }
 }
 
