@@ -52,6 +52,35 @@ button:active{
     transform:scale(1.05);
 }
 
+.speakBtn{
+    background:#3fb950;
+    color:#fff;
+    font-weight:bold;
+    font-size:28px;
+    width:70px;
+    height:70px;
+    border-radius:50%;
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 4px 12px rgba(63,185,80,0.4);
+    animation:pulse 2s ease-in-out infinite;
+}
+
+.speakBtn:hover{
+    background:#2ea043;
+    transform:scale(1.1);
+}
+
+.speakBtn:active{
+    animation:none;
+}
+
+@keyframes pulse{
+    0%, 100%{ transform:scale(1); box-shadow:0 4px 12px rgba(63,185,80,0.4); }
+    50%{ transform:scale(1.05); box-shadow:0 6px 20px rgba(63,185,80,0.6); }
+}
+
 .levelBtn{ 
     background:#1f3b73;
     color:#fff;
@@ -438,6 +467,14 @@ button:active{
     <p style="font-size:18px; color:#3fb950;">Score: <strong id="scrambleScore">0</strong></p>
 </div>
 
+<!-- Speak Button -->
+<div style="margin:20px 0;">
+    <button class="speakBtn" onclick="speakCurrentWord()" title="Click to hear the word">
+        🔊
+    </button>
+    <p style="color:#ccc; font-size:14px; margin-top:10px;">Click to hear the word</p>
+</div>
+
 <div class="scrambled-word" id="scrambledDisplay"></div>
 
 <div>
@@ -470,6 +507,14 @@ button:active{
 <div class="stats-panel" style="margin:20px auto;">
     <p style="font-size:20px;">Round <span id="hangmanRound">1</span> of <span id="hangmanTotal">0</span></p>
     <p style="font-size:18px; color:#3fb950;">Score: <strong id="hangmanScore">0</strong></p>
+</div>
+
+<!-- Speak Button -->
+<div style="margin:20px 0;">
+    <button class="speakBtn" onclick="speakCurrentWord()" title="Click to hear the word">
+        🔊
+    </button>
+    <p style="color:#ccc; font-size:14px; margin-top:10px;">Click to hear the word</p>
 </div>
 
 <div class="lives-display" id="livesDisplay">Lives: ❤️❤️❤️❤️❤️❤️</div>
@@ -518,6 +563,58 @@ const STATS_KEY = 'eagleSpellingStats';
 
 const correctSound = new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg");
 const wrongSound = new Audio("https://actions.google.com/sounds/v1/cartoon/boing.ogg");
+
+// ============================================================
+// TEXT-TO-SPEECH
+// ============================================================
+
+function speakWord(word) {
+    // Cancel any ongoing speech
+    window.speechSynthesis.cancel();
+    
+    // Create speech utterance
+    const utterance = new SpeechSynthesisUtterance(word);
+    
+    // Configure speech settings
+    utterance.rate = 0.8;  // Slightly slower for clarity
+    utterance.pitch = 1.0;
+    utterance.volume = 1.0;
+    utterance.lang = 'en-US';
+    
+    // Try to use a good quality voice
+    const voices = window.speechSynthesis.getVoices();
+    const preferredVoices = voices.filter(voice => 
+        voice.lang.startsWith('en') && 
+        (voice.name.includes('Google') || voice.name.includes('Microsoft') || voice.name.includes('Samantha'))
+    );
+    
+    if (preferredVoices.length > 0) {
+        utterance.voice = preferredVoices[0];
+    }
+    
+    // Speak the word
+    window.speechSynthesis.speak(utterance);
+    
+    // Visual feedback
+    const speakBtns = document.querySelectorAll('.speakBtn');
+    speakBtns.forEach(btn => {
+        btn.style.transform = 'scale(1.2)';
+        setTimeout(() => {
+            btn.style.transform = 'scale(1)';
+        }, 300);
+    });
+}
+
+function speakCurrentWord() {
+    if (currentWord) {
+        speakWord(currentWord);
+    }
+}
+
+// Load voices when available
+window.speechSynthesis.onvoiceschanged = function() {
+    window.speechSynthesis.getVoices();
+};
 
 // ============================================================
 // WORD MANAGEMENT
@@ -828,6 +925,11 @@ function startScrambleRound() {
     document.getElementById('scrambleScore').textContent = score;
     
     document.getElementById('scrambleAnswer').focus();
+    
+    // Auto-speak the word when round starts
+    setTimeout(() => {
+        speakWord(currentWord);
+    }, 500);
 }
 
 function checkScramble() {
@@ -917,6 +1019,11 @@ function startHangmanRound() {
     updateLivesDisplay();
     drawHangman();
     resetKeyboard();
+    
+    // Auto-speak the word when round starts
+    setTimeout(() => {
+        speakWord(currentWord);
+    }, 500);
 }
 
 function resetKeyboard() {
