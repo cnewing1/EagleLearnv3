@@ -288,9 +288,9 @@ button:active{
 
 .keyboard{
     display:grid;
-    grid-template-columns:repeat(auto-fit, minmax(50px, 1fr));
+    grid-template-columns:repeat(auto-fit, minmax(45px, 1fr));
     gap:10px;
-    max-width:700px;
+    max-width:800px;
     margin:20px auto;
     padding:0 20px;
 }
@@ -304,6 +304,7 @@ button:active{
     border-radius:8px;
     cursor:pointer;
     transition:0.2s;
+    min-width:45px;
 }
 
 .key:hover{
@@ -437,13 +438,14 @@ button:active{
     }
     
     .keyboard{
-        grid-template-columns:repeat(7, 1fr);
+        grid-template-columns:repeat(auto-fit, minmax(40px, 1fr));
         gap:8px;
     }
     
     .key{
         padding:12px 8px;
         font-size:16px;
+        min-width:40px;
     }
     
     .sentence-display{
@@ -1114,13 +1116,50 @@ function showHint() {
 // HANGMAN MODE
 // ============================================================
 
+function getAllCharactersInList() {
+    // Get all unique characters from the spelling word list
+    const allChars = new Set();
+    
+    spellingWords.forEach(word => {
+        word.split('').forEach(char => {
+            // Add uppercase version of each character
+            allChars.add(char.toUpperCase());
+        });
+    });
+    
+    // Convert to array and sort
+    let chars = Array.from(allChars);
+    
+    // Separate letters, apostrophes, hyphens, and other special chars
+    const letters = chars.filter(c => /[A-Z]/.test(c)).sort();
+    const apostrophes = chars.filter(c => c === "'");
+    const hyphens = chars.filter(c => c === "-");
+    const others = chars.filter(c => !/[A-Z]/.test(c) && c !== "'" && c !== "-").sort();
+    
+    // Return in order: letters, then special characters
+    return [...letters, ...apostrophes, ...hyphens, ...others];
+}
+
 function initKeyboard() {
     const keyboard = document.getElementById('keyboard');
-    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
     
-    keyboard.innerHTML = letters.map(letter => 
-        `<button class="key" onclick="guessLetter('${letter}')" id="key-${letter}">${letter}</button>`
-    ).join('');
+    // Get all characters that appear in the spelling list
+    const characters = getAllCharactersInList();
+    
+    // If no special characters, just use standard alphabet
+    if (characters.every(c => /[A-Z]/.test(c))) {
+        const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+        keyboard.innerHTML = letters.map(letter => 
+            `<button class="key" onclick="guessLetter('${letter}')" id="key-${letter}">${letter}</button>`
+        ).join('');
+    } else {
+        // Use dynamic character set
+        keyboard.innerHTML = characters.map(char => {
+            const safeId = char === "'" ? 'apostrophe' : char === "-" ? 'hyphen' : char;
+            const display = char === "'" ? "'" : char === "-" ? "-" : char;
+            return `<button class="key" onclick="guessLetter('${char.replace(/'/g, "\\'")}', '${safeId}')" id="key-${safeId}">${display}</button>`;
+        }).join('');
+    }
 }
 
 function startHangmanRound() {
@@ -1142,7 +1181,9 @@ function startHangmanRound() {
     updateWordDisplay();
     updateLivesDisplay();
     drawHangman();
-    resetKeyboard();
+    
+    // Rebuild keyboard for this word
+    initKeyboard();
     
     // Auto-speak the word when round starts
     setTimeout(() => {
@@ -1151,9 +1192,9 @@ function startHangmanRound() {
 }
 
 function resetKeyboard() {
-    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-    letters.forEach(letter => {
-        const key = document.getElementById(`key-${letter}`);
+    // Get all keys and reset their state
+    const allKeys = document.querySelectorAll('.key');
+    allKeys.forEach(key => {
         key.className = 'key';
     });
 }
@@ -1172,11 +1213,16 @@ function updateLivesDisplay() {
     document.getElementById('livesDisplay').textContent = `Lives: ${hearts}${broken}`;
 }
 
-function guessLetter(letter) {
+function guessLetter(letter, keyId) {
+    // Use keyId if provided (for special chars), otherwise use letter
+    const id = keyId || letter;
+    
     if (guessedLetters.includes(letter)) return;
     
     guessedLetters.push(letter);
-    const key = document.getElementById(`key-${letter}`);
+    const key = document.getElementById(`key-${id}`);
+    
+    if (!key) return; // Safety check
     
     if (currentWord.includes(letter)) {
         // Correct guess
@@ -1217,6 +1263,15 @@ function guessLetter(letter) {
         if (wrongGuesses >= maxWrongGuesses) {
             // Game over
             streak = 0;
+            document.getElementById('hangmanFeedback').textContent = `😔 The word was: ${currentWord}`;
+            document.getElementById('hangmanFeedback').className = 'incorrect';
+            document.getElementById('wordDisplay').textContent = currentWord.split('').join(' ');
+            
+            currentWordIndex++;
+            setTimeout(startHangmanRound, 3000);
+        }
+    }
+}
             document.getElementById('hangmanFeedback').textContent = `😔 The word was: ${currentWord}`;
             document.getElementById('hangmanFeedback').className = 'incorrect';
             document.getElementById('wordDisplay').textContent = currentWord.split('').join(' ');
