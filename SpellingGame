@@ -1,0 +1,1127 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EagleLearn – Spelling Challenge</title>
+
+<style>
+body{
+    font-family: Arial, sans-serif;
+    margin:0;
+    background:linear-gradient(135deg,#0b1f3a,#1f3b73,#b8860b);
+    color:#fff;
+    text-align:center;
+    overflow-x:hidden;
+    min-height:100vh;
+}
+
+.screen{ 
+    padding:30px; 
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+}
+.hidden{ display:none !important; }
+
+button{
+    padding:15px 25px;
+    margin:10px;
+    font-size:18px;
+    border:none;
+    border-radius:10px;
+    cursor:pointer;
+    transition:0.3s;
+    -webkit-tap-highlight-color: transparent;
+}
+
+button:active{
+    transform:scale(0.95);
+}
+
+.modeBtn{ 
+    background:#b8860b;
+    color:#000;
+    font-weight:bold;
+}
+.modeBtn:hover{
+    background:#d4a520;
+    transform:scale(1.05);
+}
+
+.levelBtn{ 
+    background:#1f3b73;
+    color:#fff;
+}
+.levelBtn:hover{
+    background:#2d4a8a;
+}
+
+.primaryBtn{
+    background:#3fb950;
+    color:#fff;
+    font-weight:bold;
+}
+
+.dangerBtn{
+    background:#f85149;
+    color:#fff;
+}
+
+.correct{ color:lime; }
+.incorrect{ color:#ff8080; }
+
+/* Spelling List Manager */
+.spelling-manager{
+    background:rgba(31,59,115,0.3);
+    border:2px solid #b8860b;
+    border-radius:15px;
+    padding:25px;
+    max-width:600px;
+    width:90%;
+    margin:20px auto;
+}
+
+.word-input-area{
+    display:flex;
+    gap:10px;
+    margin:15px 0;
+    flex-wrap:wrap;
+    justify-content:center;
+}
+
+.word-input-area input{
+    padding:12px;
+    font-size:16px;
+    border:2px solid #b8860b;
+    border-radius:8px;
+    background:rgba(255,255,255,0.9);
+    color:#000;
+    flex:1;
+    min-width:200px;
+}
+
+.word-list{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    margin:20px 0;
+    justify-content:center;
+    min-height:100px;
+}
+
+.word-chip{
+    background:#b8860b;
+    color:#000;
+    padding:10px 15px;
+    border-radius:20px;
+    font-weight:bold;
+    display:flex;
+    align-items:center;
+    gap:8px;
+    animation:slideIn 0.3s ease;
+}
+
+.word-chip .remove-btn{
+    background:#f85149;
+    color:#fff;
+    border:none;
+    width:24px;
+    height:24px;
+    border-radius:50%;
+    cursor:pointer;
+    font-size:14px;
+    padding:0;
+    margin:0;
+}
+
+@keyframes slideIn{
+    from{ transform:translateY(-20px); opacity:0; }
+    to{ transform:translateY(0); opacity:1; }
+}
+
+/* Game Mode Selector */
+.mode-selector{
+    display:flex;
+    gap:15px;
+    margin:25px 0;
+    flex-wrap:wrap;
+    justify-content:center;
+}
+
+.mode-card{
+    background:rgba(31,59,115,0.5);
+    border:3px solid #b8860b;
+    border-radius:15px;
+    padding:30px;
+    min-width:200px;
+    cursor:pointer;
+    transition:0.3s;
+}
+
+.mode-card:hover{
+    transform:scale(1.05);
+    box-shadow:0 8px 25px rgba(184,134,11,0.5);
+}
+
+.mode-card.selected{
+    background:#b8860b;
+    color:#000;
+}
+
+.mode-card h3{
+    margin:10px 0;
+    font-size:24px;
+}
+
+.mode-card .emoji{
+    font-size:48px;
+    display:block;
+    margin-bottom:10px;
+}
+
+/* Word Scramble */
+.scrambled-word{
+    font-size:48px;
+    letter-spacing:15px;
+    margin:30px 0;
+    font-weight:bold;
+    color:#b8860b;
+    text-shadow:2px 2px 4px rgba(0,0,0,0.5);
+}
+
+.letter-tiles{
+    display:flex;
+    flex-wrap:wrap;
+    gap:12px;
+    justify-content:center;
+    margin:30px auto;
+    max-width:600px;
+}
+
+.letter-tile{
+    width:60px;
+    height:60px;
+    background:#b8860b;
+    color:#000;
+    font-size:28px;
+    font-weight:bold;
+    border-radius:10px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    transition:0.2s;
+    box-shadow:0 4px 8px rgba(0,0,0,0.3);
+}
+
+.letter-tile:hover{
+    transform:translateY(-5px);
+    box-shadow:0 6px 12px rgba(0,0,0,0.4);
+}
+
+.letter-tile.used{
+    opacity:0.3;
+    pointer-events:none;
+}
+
+.answer-input{
+    background:rgba(255,255,255,0.9);
+    border:3px solid #b8860b;
+    border-radius:10px;
+    padding:15px 20px;
+    font-size:32px;
+    color:#000;
+    text-align:center;
+    min-width:300px;
+    letter-spacing:8px;
+    font-weight:bold;
+}
+
+/* Hangman */
+.hangman-canvas{
+    background:#fff;
+    border-radius:15px;
+    margin:20px auto;
+    box-shadow:0 8px 20px rgba(0,0,0,0.3);
+}
+
+.word-display{
+    font-size:42px;
+    letter-spacing:20px;
+    margin:30px 0;
+    font-weight:bold;
+    color:#b8860b;
+}
+
+.keyboard{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(50px, 1fr));
+    gap:10px;
+    max-width:700px;
+    margin:20px auto;
+    padding:0 20px;
+}
+
+.key{
+    padding:15px;
+    background:#b8860b;
+    color:#000;
+    font-size:20px;
+    font-weight:bold;
+    border-radius:8px;
+    cursor:pointer;
+    transition:0.2s;
+}
+
+.key:hover{
+    background:#d4a520;
+    transform:scale(1.1);
+}
+
+.key.used{
+    background:#666;
+    color:#ccc;
+    pointer-events:none;
+}
+
+.key.correct{
+    background:#3fb950;
+    color:#fff;
+}
+
+.key.wrong{
+    background:#f85149;
+    color:#fff;
+}
+
+.lives-display{
+    font-size:28px;
+    margin:20px 0;
+}
+
+/* Stats */
+.stats-panel{
+    background:rgba(31,59,115,0.3);
+    border:2px solid #b8860b;
+    border-radius:15px;
+    padding:20px;
+    margin:20px auto;
+    max-width:500px;
+}
+
+.stat-item{
+    font-size:20px;
+    margin:10px 0;
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+    .scrambled-word{
+        font-size:32px;
+        letter-spacing:8px;
+    }
+    
+    .word-display{
+        font-size:28px;
+        letter-spacing:12px;
+    }
+    
+    .letter-tile{
+        width:50px;
+        height:50px;
+        font-size:24px;
+    }
+    
+    .answer-input{
+        font-size:24px;
+        min-width:250px;
+    }
+    
+    .keyboard{
+        grid-template-columns:repeat(7, 1fr);
+        gap:8px;
+    }
+    
+    .key{
+        padding:12px 8px;
+        font-size:16px;
+    }
+}
+</style>
+
+</head>
+
+<body>
+
+<!-- MENU SCREEN -->
+
+<div class="screen" id="menuScreen">
+    <h1>🦅 EagleLearn - Spelling Challenge</h1>
+
+```
+<!-- Spelling List Manager -->
+<div class="spelling-manager">
+    <h2>📝 My Spelling Words</h2>
+    
+    <!-- Manual Entry -->
+    <div class="word-input-area">
+        <input type="text" id="wordInput" placeholder="Enter a spelling word" 
+               onkeypress="if(event.key==='Enter') addWord()">
+        <button class="primaryBtn" onclick="addWord()">+ Add Word</button>
+    </div>
+    
+    <!-- File Upload -->
+    <div style="margin:20px 0; padding:20px; background:rgba(31,59,115,0.2); border-radius:10px; border:2px dashed #b8860b;">
+        <h3 style="margin:0 0 15px 0; font-size:18px;">📄 Or Upload a List</h3>
+        <p style="font-size:14px; color:#ccc; margin-bottom:15px;">
+            Upload a Word document (.docx) or text file (.txt) with your spelling words (one word per line)
+        </p>
+        <input type="file" id="fileInput" accept=".txt,.docx,.doc" 
+               style="display:none;" onchange="handleFileUpload(event)">
+        <button class="modeBtn" onclick="document.getElementById('fileInput').click()">
+            📁 Choose File
+        </button>
+        <span id="fileName" style="margin-left:10px; color:#b8860b; font-weight:bold;"></span>
+    </div>
+    
+    <div class="word-list" id="wordList">
+        <p style="color:#ccc;">No words yet. Add your weekly spelling list!</p>
+    </div>
+    
+    <div style="margin-top:20px;">
+        <button class="dangerBtn" onclick="clearAllWords()">Clear All Words</button>
+        <button class="modeBtn" onclick="loadSampleWords()">Load Sample Words</button>
+    </div>
+</div>
+
+<!-- Game Mode Selection -->
+<div class="mode-selector">
+    <div class="mode-card" onclick="selectMode('scramble')">
+        <span class="emoji">🔀</span>
+        <h3>Word Scramble</h3>
+        <p>Unscramble the letters</p>
+    </div>
+    
+    <div class="mode-card" onclick="selectMode('hangman')">
+        <span class="emoji">🎯</span>
+        <h3>Hangman</h3>
+        <p>Guess the word</p>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="stats-panel" id="statsPanel">
+    <h3>📊 Your Progress</h3>
+    <div class="stat-item">Words Mastered: <strong id="statMastered">0</strong></div>
+    <div class="stat-item">Current Streak: <strong id="statStreak">0</strong></div>
+    <div class="stat-item">Best Streak: <strong id="statBestStreak">0</strong></div>
+</div>
+
+<button onclick="backToMenu()" style="margin-top:20px; background:#666;">← Back to EagleLearn</button>
+```
+
+</div>
+
+<!-- WORD SCRAMBLE SCREEN -->
+
+<div class="screen hidden" id="scrambleScreen">
+    <h2>🔀 Word Scramble</h2>
+    <div id="medals" style="font-size:28px;margin-bottom:15px;"></div>
+
+```
+<div class="stats-panel" style="margin:20px auto;">
+    <p style="font-size:20px;">Round <span id="scrambleRound">1</span> of <span id="scrambleTotal">0</span></p>
+    <p style="font-size:18px; color:#3fb950;">Score: <strong id="scrambleScore">0</strong></p>
+</div>
+
+<div class="scrambled-word" id="scrambledDisplay"></div>
+
+<div>
+    <input type="text" class="answer-input" id="scrambleAnswer" 
+           placeholder="Type your answer" 
+           onkeypress="if(event.key==='Enter') checkScramble()"
+           autocomplete="off">
+</div>
+
+<div style="margin:20px 0;">
+    <button class="primaryBtn" onclick="checkScramble()">✓ Check Answer</button>
+    <button class="modeBtn" onclick="skipWord()">⏭ Skip</button>
+    <button class="modeBtn" onclick="showHint()">💡 Hint</button>
+</div>
+
+<p id="scrambleFeedback" style="font-size:24px; min-height:30px;"></p>
+
+<button onclick="exitGame()">← Back to Menu</button>
+```
+
+</div>
+
+<!-- HANGMAN SCREEN -->
+
+<div class="screen hidden" id="hangmanScreen">
+    <h2>🎯 Hangman</h2>
+    <div id="hangmanMedals" style="font-size:28px;margin-bottom:15px;"></div>
+
+```
+<div class="stats-panel" style="margin:20px auto;">
+    <p style="font-size:20px;">Round <span id="hangmanRound">1</span> of <span id="hangmanTotal">0</span></p>
+    <p style="font-size:18px; color:#3fb950;">Score: <strong id="hangmanScore">0</strong></p>
+</div>
+
+<div class="lives-display" id="livesDisplay">Lives: ❤️❤️❤️❤️❤️❤️</div>
+
+<canvas id="hangmanCanvas" class="hangman-canvas" width="300" height="300"></canvas>
+
+<div class="word-display" id="wordDisplay">_ _ _ _</div>
+
+<div class="keyboard" id="keyboard"></div>
+
+<p id="hangmanFeedback" style="font-size:24px; min-height:30px;"></p>
+
+<button onclick="exitGame()">← Back to Menu</button>
+```
+
+</div>
+
+<script>
+// ============================================================
+// Load mammoth.js for Word document parsing
+// ============================================================
+const mammothScript = document.createElement('script');
+mammothScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js';
+document.head.appendChild(mammothScript);
+
+// ============================================================
+// DATA & STORAGE
+// ============================================================
+
+let spellingWords = [];
+let currentMode = '';
+let currentWordIndex = 0;
+let currentWord = '';
+let scrambledWord = '';
+let guessedLetters = [];
+let wrongGuesses = 0;
+let maxWrongGuesses = 6;
+let score = 0;
+let roundsPlayed = 0;
+let streak = 0;
+let bestStreak = 0;
+let masteredWords = new Set();
+
+const STORAGE_KEY = 'eagleSpellingWords';
+const STATS_KEY = 'eagleSpellingStats';
+
+const correctSound = new Audio("https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg");
+const wrongSound = new Audio("https://actions.google.com/sounds/v1/cartoon/boing.ogg");
+
+// ============================================================
+// WORD MANAGEMENT
+// ============================================================
+
+function loadWords() {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+        spellingWords = JSON.parse(saved);
+        displayWordList();
+    }
+}
+
+function saveWords() {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(spellingWords));
+}
+
+function addWord() {
+    const input = document.getElementById('wordInput');
+    const word = input.value.trim().toUpperCase();
+    
+    if (word === '') return;
+    
+    if (spellingWords.includes(word)) {
+        alert('This word is already in your list!');
+        input.value = '';
+        return;
+    }
+    
+    spellingWords.push(word);
+    saveWords();
+    displayWordList();
+    input.value = '';
+    input.focus();
+}
+
+function removeWord(word) {
+    spellingWords = spellingWords.filter(w => w !== word);
+    saveWords();
+    displayWordList();
+}
+
+function displayWordList() {
+    const container = document.getElementById('wordList');
+    
+    if (spellingWords.length === 0) {
+        container.innerHTML = '<p style="color:#ccc;">No words yet. Add your weekly spelling list!</p>';
+        return;
+    }
+    
+    container.innerHTML = spellingWords.map(word => `
+        <div class="word-chip">
+            <span>${word}</span>
+            <button class="remove-btn" onclick="removeWord('${word}')">×</button>
+        </div>
+    `).join('');
+}
+
+function clearAllWords() {
+    if (confirm('Clear all spelling words?')) {
+        spellingWords = [];
+        saveWords();
+        displayWordList();
+    }
+}
+
+function loadSampleWords() {
+    const samples = ['EAGLE', 'LEARN', 'SPELL', 'WORD', 'PRACTICE', 'CHALLENGE', 
+                     'MASTER', 'SUCCESS', 'STUDENT', 'TEACHER'];
+    spellingWords = [...new Set([...spellingWords, ...samples])];
+    saveWords();
+    displayWordList();
+}
+
+// ============================================================
+// FILE UPLOAD HANDLING
+// ============================================================
+
+async function handleFileUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    
+    const fileName = file.name;
+    document.getElementById('fileName').textContent = `Loading ${fileName}...`;
+    
+    try {
+        let words = [];
+        
+        if (file.name.endsWith('.txt')) {
+            // Handle text files
+            words = await parseTextFile(file);
+        } else if (file.name.endsWith('.docx') || file.name.endsWith('.doc')) {
+            // Handle Word documents
+            words = await parseWordDocument(file);
+        } else {
+            alert('Please upload a .txt or .docx file');
+            document.getElementById('fileName').textContent = '';
+            return;
+        }
+        
+        if (words.length === 0) {
+            alert('No words found in the file. Make sure words are on separate lines.');
+            document.getElementById('fileName').textContent = '';
+            return;
+        }
+        
+        // Add words to the list (avoiding duplicates)
+        const newWords = words.filter(word => !spellingWords.includes(word));
+        spellingWords = [...spellingWords, ...newWords];
+        saveWords();
+        displayWordList();
+        
+        document.getElementById('fileName').textContent = `✅ Added ${newWords.length} word${newWords.length !== 1 ? 's' : ''} from ${fileName}`;
+        
+        // Clear file input
+        event.target.value = '';
+        
+        // Show success message
+        setTimeout(() => {
+            document.getElementById('fileName').textContent = '';
+        }, 3000);
+        
+    } catch (error) {
+        console.error('Error processing file:', error);
+        alert('Error reading file. Please try again or enter words manually.');
+        document.getElementById('fileName').textContent = '';
+    }
+}
+
+function parseTextFile(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            const text = e.target.result;
+            const words = extractWords(text);
+            resolve(words);
+        };
+        
+        reader.onerror = function(e) {
+            reject(new Error('Failed to read text file'));
+        };
+        
+        reader.readAsText(file);
+    });
+}
+
+async function parseWordDocument(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        
+        reader.onload = async function(e) {
+            try {
+                // Wait for mammoth to be loaded
+                if (typeof mammoth === 'undefined') {
+                    // Give mammoth time to load
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+                
+                if (typeof mammoth === 'undefined') {
+                    reject(new Error('Word document library not loaded. Please try again.'));
+                    return;
+                }
+                
+                const arrayBuffer = e.target.result;
+                const result = await mammoth.extractRawText({ arrayBuffer: arrayBuffer });
+                const text = result.value;
+                const words = extractWords(text);
+                resolve(words);
+            } catch (error) {
+                console.error('Mammoth error:', error);
+                reject(new Error('Failed to parse Word document'));
+            }
+        };
+        
+        reader.onerror = function(e) {
+            reject(new Error('Failed to read Word document'));
+        };
+        
+        reader.readAsArrayBuffer(file);
+    });
+}
+
+function extractWords(text) {
+    // Split by newlines and clean up
+    const lines = text.split(/[\n\r]+/);
+    const words = [];
+    
+    lines.forEach(line => {
+        // Remove numbering (1. 2. etc.), bullets, and extra spaces
+        let word = line.trim()
+            .replace(/^\d+[\.\)]\s*/, '') // Remove "1. " or "1) "
+            .replace(/^[-•*]\s*/, '')      // Remove bullets
+            .replace(/[^\w\s'-]/g, '')     // Remove special chars except hyphen and apostrophe
+            .trim()
+            .toUpperCase();
+        
+        // Only add non-empty words
+        if (word && word.length > 1) {
+            words.push(word);
+        }
+    });
+    
+    // Remove duplicates
+    return [...new Set(words)];
+}
+
+// ============================================================
+// STATS
+// ============================================================
+
+function loadStats() {
+    const saved = localStorage.getItem(STATS_KEY);
+    if (saved) {
+        const stats = JSON.parse(saved);
+        bestStreak = stats.bestStreak || 0;
+        masteredWords = new Set(stats.masteredWords || []);
+    }
+    updateStatsDisplay();
+}
+
+function saveStats() {
+    localStorage.setItem(STATS_KEY, JSON.stringify({
+        bestStreak: bestStreak,
+        masteredWords: Array.from(masteredWords)
+    }));
+}
+
+function updateStatsDisplay() {
+    document.getElementById('statMastered').textContent = masteredWords.size;
+    document.getElementById('statStreak').textContent = streak;
+    document.getElementById('statBestStreak').textContent = bestStreak;
+}
+
+// ============================================================
+// GAME MODE SELECTION
+// ============================================================
+
+function selectMode(mode) {
+    if (spellingWords.length === 0) {
+        alert('Please add some spelling words first!');
+        return;
+    }
+    
+    currentMode = mode;
+    score = 0;
+    roundsPlayed = 0;
+    currentWordIndex = 0;
+    
+    // Shuffle words
+    spellingWords = spellingWords.sort(() => Math.random() - 0.5);
+    
+    document.getElementById('menuScreen').classList.add('hidden');
+    
+    if (mode === 'scramble') {
+        document.getElementById('scrambleScreen').classList.remove('hidden');
+        startScrambleRound();
+    } else if (mode === 'hangman') {
+        document.getElementById('hangmanScreen').classList.remove('hidden');
+        initKeyboard();
+        startHangmanRound();
+    }
+}
+
+function exitGame() {
+    document.getElementById('scrambleScreen').classList.add('hidden');
+    document.getElementById('hangmanScreen').classList.add('hidden');
+    document.getElementById('menuScreen').classList.remove('hidden');
+    updateStatsDisplay();
+}
+
+// ============================================================
+// WORD SCRAMBLE MODE
+// ============================================================
+
+function scrambleWord(word) {
+    const arr = word.split('');
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr.join('');
+}
+
+function startScrambleRound() {
+    if (currentWordIndex >= spellingWords.length) {
+        // Game complete
+        alert(`🎉 Game Complete!\n\nFinal Score: ${score}\nWords Mastered: ${roundsPlayed}/${spellingWords.length}`);
+        exitGame();
+        return;
+    }
+    
+    currentWord = spellingWords[currentWordIndex];
+    scrambledWord = scrambleWord(currentWord);
+    
+    // Make sure scrambled is different from original
+    let attempts = 0;
+    while (scrambledWord === currentWord && attempts < 10) {
+        scrambledWord = scrambleWord(currentWord);
+        attempts++;
+    }
+    
+    document.getElementById('scrambledDisplay').textContent = scrambledWord;
+    document.getElementById('scrambleAnswer').value = '';
+    document.getElementById('scrambleFeedback').textContent = '';
+    document.getElementById('scrambleRound').textContent = currentWordIndex + 1;
+    document.getElementById('scrambleTotal').textContent = spellingWords.length;
+    document.getElementById('scrambleScore').textContent = score;
+    
+    document.getElementById('scrambleAnswer').focus();
+}
+
+function checkScramble() {
+    const answer = document.getElementById('scrambleAnswer').value.trim().toUpperCase();
+    const feedback = document.getElementById('scrambleFeedback');
+    
+    if (answer === '') return;
+    
+    if (answer === currentWord) {
+        correctSound.currentTime = 0;
+        correctSound.play();
+        
+        feedback.textContent = '🦅 Correct! Great job!';
+        feedback.className = 'correct';
+        
+        score += 10;
+        roundsPlayed++;
+        streak++;
+        masteredWords.add(currentWord);
+        
+        if (streak > bestStreak) {
+            bestStreak = streak;
+        }
+        
+        saveStats();
+        document.getElementById('scrambleScore').textContent = score;
+        
+        currentWordIndex++;
+        setTimeout(startScrambleRound, 1500);
+    } else {
+        wrongSound.currentTime = 0;
+        wrongSound.play();
+        
+        feedback.textContent = '❌ Not quite! Try again.';
+        feedback.className = 'incorrect';
+        
+        streak = 0;
+        
+        document.getElementById('scrambleAnswer').value = '';
+        document.getElementById('scrambleAnswer').focus();
+    }
+}
+
+function skipWord() {
+    if (confirm('Skip this word?')) {
+        streak = 0;
+        currentWordIndex++;
+        startScrambleRound();
+    }
+}
+
+function showHint() {
+    const hint = currentWord[0] + '...' + currentWord[currentWord.length - 1];
+    alert(`Hint: The word starts with "${currentWord[0]}" and ends with "${currentWord[currentWord.length - 1]}"\n\nLength: ${currentWord.length} letters`);
+}
+
+// ============================================================
+// HANGMAN MODE
+// ============================================================
+
+function initKeyboard() {
+    const keyboard = document.getElementById('keyboard');
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+    
+    keyboard.innerHTML = letters.map(letter => 
+        `<button class="key" onclick="guessLetter('${letter}')" id="key-${letter}">${letter}</button>`
+    ).join('');
+}
+
+function startHangmanRound() {
+    if (currentWordIndex >= spellingWords.length) {
+        alert(`🎉 Game Complete!\n\nFinal Score: ${score}\nWords Mastered: ${roundsPlayed}/${spellingWords.length}`);
+        exitGame();
+        return;
+    }
+    
+    currentWord = spellingWords[currentWordIndex];
+    guessedLetters = [];
+    wrongGuesses = 0;
+    
+    document.getElementById('hangmanRound').textContent = currentWordIndex + 1;
+    document.getElementById('hangmanTotal').textContent = spellingWords.length;
+    document.getElementById('hangmanScore').textContent = score;
+    document.getElementById('hangmanFeedback').textContent = '';
+    
+    updateWordDisplay();
+    updateLivesDisplay();
+    drawHangman();
+    resetKeyboard();
+}
+
+function resetKeyboard() {
+    const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+    letters.forEach(letter => {
+        const key = document.getElementById(`key-${letter}`);
+        key.className = 'key';
+    });
+}
+
+function updateWordDisplay() {
+    const display = currentWord.split('').map(letter => 
+        guessedLetters.includes(letter) ? letter : '_'
+    ).join(' ');
+    
+    document.getElementById('wordDisplay').textContent = display;
+}
+
+function updateLivesDisplay() {
+    const hearts = '❤️'.repeat(maxWrongGuesses - wrongGuesses);
+    const broken = '💔'.repeat(wrongGuesses);
+    document.getElementById('livesDisplay').textContent = `Lives: ${hearts}${broken}`;
+}
+
+function guessLetter(letter) {
+    if (guessedLetters.includes(letter)) return;
+    
+    guessedLetters.push(letter);
+    const key = document.getElementById(`key-${letter}`);
+    
+    if (currentWord.includes(letter)) {
+        // Correct guess
+        correctSound.currentTime = 0;
+        correctSound.play();
+        key.className = 'key correct';
+        updateWordDisplay();
+        
+        // Check if word is complete
+        if (currentWord.split('').every(l => guessedLetters.includes(l))) {
+            document.getElementById('hangmanFeedback').textContent = '🦅 Perfect! Word complete!';
+            document.getElementById('hangmanFeedback').className = 'correct';
+            
+            score += 10;
+            roundsPlayed++;
+            streak++;
+            masteredWords.add(currentWord);
+            
+            if (streak > bestStreak) {
+                bestStreak = streak;
+            }
+            
+            saveStats();
+            document.getElementById('hangmanScore').textContent = score;
+            
+            currentWordIndex++;
+            setTimeout(startHangmanRound, 2000);
+        }
+    } else {
+        // Wrong guess
+        wrongSound.currentTime = 0;
+        wrongSound.play();
+        key.className = 'key wrong';
+        wrongGuesses++;
+        updateLivesDisplay();
+        drawHangman();
+        
+        if (wrongGuesses >= maxWrongGuesses) {
+            // Game over
+            streak = 0;
+            document.getElementById('hangmanFeedback').textContent = `😔 The word was: ${currentWord}`;
+            document.getElementById('hangmanFeedback').className = 'incorrect';
+            document.getElementById('wordDisplay').textContent = currentWord.split('').join(' ');
+            
+            currentWordIndex++;
+            setTimeout(startHangmanRound, 3000);
+        }
+    }
+}
+
+function drawHangman() {
+    const canvas = document.getElementById('hangmanCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = '#000';
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    
+    // Base
+    ctx.beginPath();
+    ctx.moveTo(20, 280);
+    ctx.lineTo(180, 280);
+    ctx.stroke();
+    
+    // Pole
+    ctx.beginPath();
+    ctx.moveTo(60, 280);
+    ctx.lineTo(60, 40);
+    ctx.stroke();
+    
+    // Top beam
+    ctx.beginPath();
+    ctx.moveTo(60, 40);
+    ctx.lineTo(180, 40);
+    ctx.stroke();
+    
+    // Rope
+    ctx.beginPath();
+    ctx.moveTo(180, 40);
+    ctx.lineTo(180, 80);
+    ctx.stroke();
+    
+    if (wrongGuesses >= 1) {
+        // Head
+        ctx.beginPath();
+        ctx.arc(180, 100, 20, 0, Math.PI * 2);
+        ctx.stroke();
+    }
+    
+    if (wrongGuesses >= 2) {
+        // Body
+        ctx.beginPath();
+        ctx.moveTo(180, 120);
+        ctx.lineTo(180, 180);
+        ctx.stroke();
+    }
+    
+    if (wrongGuesses >= 3) {
+        // Left arm
+        ctx.beginPath();
+        ctx.moveTo(180, 140);
+        ctx.lineTo(150, 160);
+        ctx.stroke();
+    }
+    
+    if (wrongGuesses >= 4) {
+        // Right arm
+        ctx.beginPath();
+        ctx.moveTo(180, 140);
+        ctx.lineTo(210, 160);
+        ctx.stroke();
+    }
+    
+    if (wrongGuesses >= 5) {
+        // Left leg
+        ctx.beginPath();
+        ctx.moveTo(180, 180);
+        ctx.lineTo(160, 220);
+        ctx.stroke();
+    }
+    
+    if (wrongGuesses >= 6) {
+        // Right leg
+        ctx.beginPath();
+        ctx.moveTo(180, 180);
+        ctx.lineTo(200, 220);
+        ctx.stroke();
+        
+        // Sad face
+        ctx.strokeStyle = '#f85149';
+        // Eyes
+        ctx.beginPath();
+        ctx.moveTo(172, 95);
+        ctx.lineTo(176, 99);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(176, 95);
+        ctx.lineTo(172, 99);
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.moveTo(184, 95);
+        ctx.lineTo(188, 99);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(188, 95);
+        ctx.lineTo(184, 99);
+        ctx.stroke();
+        
+        // Frown
+        ctx.beginPath();
+        ctx.arc(180, 108, 8, 0.2 * Math.PI, 0.8 * Math.PI);
+        ctx.stroke();
+    }
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+
+function backToMenu() {
+    // Navigate back to main EagleLearn dashboard
+    window.location.href = 'index.html';
+}
+
+// ============================================================
+// INIT
+// ============================================================
+
+document.addEventListener('DOMContentLoaded', function() {
+    loadWords();
+    loadStats();
+    document.getElementById('wordInput').focus();
+});
+</script>
+
+</body>
+</html>
