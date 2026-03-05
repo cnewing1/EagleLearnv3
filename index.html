@@ -114,11 +114,15 @@ html, body {
 .screen {
   position: absolute;
   inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
   transform: translateY(20px);
-  overflow-y: scroll;
+  overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   padding: 20px 20px 80px;
 }
@@ -479,7 +483,6 @@ input:focus, select:focus, textarea:focus {
   max-width: 900px;
   padding-top: 80px;
   padding-bottom: 80px;
-  margin: 0 auto;
   z-index: 1;
 }
 
@@ -617,8 +620,7 @@ input:focus, select:focus, textarea:focus {
   width: 100%;
   max-width: 960px;
   padding-top: 80px;
-  padding-bottom: 80px;
-  margin: 0 auto;
+  padding-bottom: 40px;
   z-index: 1;
 }
 
