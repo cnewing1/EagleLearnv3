@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hoop Math</title>
+
+<style>
+body{
+margin:0;
+background:#0b1f3a;
+font-family:Arial;
+color:white;
+text-align:center;
+}
+
+canvas{
+background:#1c3f75;
+display:block;
+margin:auto;
+touch-action:none;
+}
+
+#ui{
+padding:10px;
+}
+</style>
+</head>
+
+<body>
+
+<div id="ui">
+<h2 id="problem"></h2>
+Score: <span id="score">0</span>
+</div>
+
+<canvas id="game" width="400" height="600"></canvas>
+
+<script>
+
+const canvas=document.getElementById("game")
+const ctx=canvas.getContext("2d")
+
+let ball={x:200,y:520,vx:0,vy:0,r:12}
+let hoop={x:200,y:120,r:30}
+
+let gravity=0.35
+let dragging=false
+let startX,startY
+
+let score=0
+let answer=0
+
+function newProblem(){
+
+let a=Math.floor(Math.random()*10)+1
+let b=Math.floor(Math.random()*10)+1
+
+answer=a*b
+
+document.getElementById("problem").innerText=`${a} × ${b} = ?`
+}
+
+newProblem()
+
+function draw(){
+
+ctx.clearRect(0,0,400,600)
+
+ctx.beginPath()
+ctx.arc(hoop.x,hoop.y,hoop.r,0,Math.PI*2)
+ctx.strokeStyle="orange"
+ctx.lineWidth=5
+ctx.stroke()
+
+ctx.beginPath()
+ctx.arc(ball.x,ball.y,ball.r,0,Math.PI*2)
+ctx.fillStyle="orange"
+ctx.fill()
+
+}
+
+function update(){
+
+ball.x+=ball.vx
+ball.y+=ball.vy
+ball.vy+=gravity
+
+if(ball.y>580){
+resetBall()
+}
+
+if(Math.hypot(ball.x-hoop.x,ball.y-hoop.y)<hoop.r){
+score++
+document.getElementById("score").innerText=score
+newProblem()
+resetBall()
+}
+}
+
+function loop(){
+update()
+draw()
+requestAnimationFrame(loop)
+}
+
+loop()
+
+function resetBall(){
+ball.x=200
+ball.y=520
+ball.vx=0
+ball.vy=0
+}
+
+canvas.addEventListener("touchstart",e=>{
+dragging=true
+let t=e.touches[0]
+startX=t.clientX
+startY=t.clientY
+})
+
+canvas.addEventListener("touchend",e=>{
+
+if(!dragging)return
+
+let t=e.changedTouches[0]
+
+let dx=t.clientX-startX
+let dy=t.clientY-startY
+
+ball.vx=dx*0.05
+ball.vy=dy*0.05
+
+dragging=false
+
+})
+
+</script>
+
+</body>
+</html>
