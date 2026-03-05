@@ -117,14 +117,13 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
+  justify-content: center;
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.4s ease, transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
   transform: translateY(20px);
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-  padding: 20px 20px 80px;
+  overflow: hidden;
+  padding: 0;
 }
 
 .screen.active {
@@ -481,9 +480,10 @@ input:focus, select:focus, textarea:focus {
 .dashboard-wrap {
   width: 100%;
   max-width: 900px;
-  padding-top: 80px;
-  padding-bottom: 80px;
-  flex-shrink: 0;
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 80px 20px 80px;
   z-index: 1;
 }
 
@@ -620,9 +620,10 @@ input:focus, select:focus, textarea:focus {
 .admin-wrap {
   width: 100%;
   max-width: 960px;
-  padding-top: 80px;
-  padding-bottom: 80px;
-  flex-shrink: 0;
+  height: 100%;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 80px 20px 80px;
   z-index: 1;
 }
 
@@ -1612,7 +1613,6 @@ var GAMES = {
 
 function launchGame(game) {
   var iframe = document.getElementById('game-iframe');
-  // Use data URI (not srcdoc) so iOS Safari passes touch events through
   var uri = GAMES[game.file];
   iframe.src = uri || game.file;
   showScreen('game');
