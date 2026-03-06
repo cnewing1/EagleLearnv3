@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Multiplication Master</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: linear-gradient(135deg, #0f0822, #1a1235);
+  font-family: Arial, sans-serif;
+  color: white;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 16px 40px;
+  text-align: center;
+}
+#backBtn {
+  position: fixed; top: 14px; left: 14px; z-index: 10;
+  background: rgba(0,0,0,0.5); color: white;
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 20px; padding: 8px 16px;
+  font-size: 0.9rem; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+h1 {
+  font-size: clamp(1.3rem, 5vw, 1.8rem);
+  margin-top: 52px;
+  margin-bottom: 4px;
+  background: linear-gradient(135deg, #c44dff, #ff6b9d);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+#scoreBar {
+  font-size: 1rem; color: #b8aee0;
+  margin-bottom: 24px;
+}
+#streakMsg {
+  font-size: 1rem; color: #ffce47; min-height: 1.4em; margin-bottom: 8px;
+}
+#question {
+  font-size: clamp(2rem, 10vw, 3.5rem);
+  font-weight: bold;
+  background: rgba(255,255,255,0.07);
+  border-radius: 20px;
+  padding: 20px 32px;
+  margin-bottom: 24px;
+  width: min(360px, 92vw);
+}
+#answers {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  width: min(360px, 92vw);
+  margin-bottom: 20px;
+}
+.abtn {
+  padding: 22px 10px;
+  font-size: clamp(1.2rem, 5vw, 1.8rem);
+  font-weight: bold;
+  border: 2px solid rgba(196,77,255,0.3);
+  border-radius: 16px;
+  background: rgba(35,26,71,0.9);
+  color: white;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.1s;
+}
+.abtn:active { transform: scale(0.95); }
+.abtn.correct { background: #3fb950; border-color: #3fb950; }
+.abtn.wrong   { background: #f85149; border-color: #f85149; }
+#feedback {
+  font-size: 1.1rem;
+  min-height: 1.6em;
+  color: #ffce47;
+}
+/* Celebration overlay */
+#celebrate {
+  display: none;
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.8);
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  z-index: 20;
+}
+#celebrate.show { display: flex; }
+#celebrateText {
+  font-size: clamp(1.8rem, 8vw, 3rem);
+  font-weight: bold;
+  text-align: center;
+  padding: 0 20px;
+}
+.celebBtn {
+  padding: 14px 28px;
+  font-size: 1.1rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #c44dff, #ff6b9d);
+  color: white;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+</style>
+</head>
+<body>
+
+<button id="backBtn" onclick="history.back()">← Back</button>
+
+<h1>🔢 Multiplication Master</h1>
+<div id="scoreBar">Score: 0 &nbsp;|&nbsp; Best: 0</div>
+<div id="streakMsg"></div>
+<div id="question">...</div>
+<div id="answers"></div>
+<div id="feedback"></div>
+
+<!-- Milestone celebration -->
+
+<div id="celebrate">
+  <div id="celebrateText"></div>
+  <button class="celebBtn" onclick="dismissCelebrate()">Keep going! →</button>
+</div>
+
+<script>
+var score = 0, streak = 0, best = 0, active = true;
+var correctAnswer = 0;
+var MILESTONES = [10, 25, 50];
+
+function newProblem() {
+  var a = Math.floor(Math.random() * 10) + 1;
+  var b = Math.floor(Math.random() * 10) + 1;
+  correctAnswer = a * b;
+  document.getElementById('question').textContent = a + ' × ' + b + ' = ?';
+
+  var opts = [correctAnswer];
+  var tries = 0;
+  while (opts.length < 4 && tries < 100) {
+    tries++;
+    var w = correctAnswer + Math.floor(Math.random() * 30) - 15;
+    if (w > 0 && opts.indexOf(w) === -1) opts.push(w);
+  }
+  opts.sort(function() { return Math.random() - 0.5; });
+
+  var container = document.getElementById('answers');
+  container.innerHTML = '';
+  active = true;
+
+  opts.forEach(function(v) {
+    var btn = document.createElement('button');
+    btn.className = 'abtn';
+    btn.textContent = v;
+    btn.onclick = function() { check(v, btn); };
+    container.appendChild(btn);
+  });
+
+  document.getElementById('feedback').textContent = '';
+}
+
+function check(v, btn) {
+  if (!active) return;
+  active = false;
+  document.querySelectorAll('.abtn').forEach(function(b) { b.style.pointerEvents = 'none'; });
+
+  if (v === correctAnswer) {
+    btn.classList.add('correct');
+    streak++;
+    score++;
+    if (score > best) best = score;
+    updateBar();
+    if (streak >= 3) {
+      document.getElementById('streakMsg').textContent = '🔥 ' + streak + ' in a row!';
+    }
+    document.getElementById('feedback').textContent = '✓ Correct!';
+
+    // Check milestone
+    if (MILESTONES.indexOf(score) !== -1) {
+      setTimeout(showCelebrate, 400);
+    } else {
+      setTimeout(function() { newProblem(); }, 700);
+    }
+  } else {
+    btn.classList.add('wrong');
+    // Show correct answer
+    document.querySelectorAll('.abtn').forEach(function(b) {
+      if (parseInt(b.textContent) === correctAnswer) b.classList.add('correct');
+    });
+    streak = 0;
+    document.getElementById('streakMsg').textContent = '';
+    document.getElementById('feedback').textContent = '✗ The answer was ' + correctAnswer;
+    setTimeout(function() { newProblem(); }, 1200);
+  }
+}
+
+function updateBar() {
+  document.getElementById('scoreBar').textContent =
+    'Score: ' + score + '  |  Best: ' + best;
+}
+
+function showCelebrate() {
+  var msgs = {
+    10: '🌟 10 in a row!\nYou\'re on fire!',
+    25: '🏆 25 correct!\nAbsolutely crushing it!',
+    50: '🚀 50 correct!\nMultiplication Master!'
+  };
+  document.getElementById('celebrateText').textContent = msgs[score] || '🎉 Amazing!';
+  document.getElementById('celebrate').classList.add('show');
+}
+
+function dismissCelebrate() {
+  document.getElementById('celebrate').classList.remove('show');
+  newProblem();
+}
+
+newProblem();
+</script>
+
+</body>
+</html>
