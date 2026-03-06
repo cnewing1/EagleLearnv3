@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>Hoop Math</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: linear-gradient(135deg, #0b1f3a, #1c3f75);
+  font-family: Arial, sans-serif;
+  color: white;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: hidden;
+  height: 100vh;
+}
+#backBtn {
+  position: fixed; top: 14px; left: 14px; z-index: 10;
+  background: rgba(0,0,0,0.5); color: white;
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 20px; padding: 8px 16px;
+  font-size: 0.9rem; cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+#ui {
+  padding: 48px 16px 8px;
+  text-align: center;
+  width: 100%;
+}
+#problem {
+  font-size: clamp(1.4rem, 6vw, 2rem);
+  font-weight: bold;
+  margin-bottom: 10px;
+  min-height: 2rem;
+}
+#answers {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.abtn {
+  padding: 12px 20px;
+  font-size: clamp(1rem, 4vw, 1.3rem);
+  font-weight: bold;
+  border: 2px solid rgba(255,200,50,0.4);
+  border-radius: 12px;
+  background: rgba(31,59,115,0.9);
+  color: white;
+  cursor: pointer;
+  min-width: 70px;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.1s;
+}
+.abtn:active { transform: scale(0.95); }
+.abtn.correct { background: #3fb950; border-color: #3fb950; }
+.abtn.wrong   { background: #f85149; border-color: #f85149; }
+#scoreBar {
+  font-size: 1rem;
+  color: #aac4ff;
+  margin-bottom: 6px;
+}
+#feedback {
+  font-size: 1rem;
+  min-height: 1.4em;
+  color: #ffce47;
+  margin-bottom: 4px;
+}
+#shootHint {
+  font-size: 0.85rem;
+  color: rgba(255,255,255,0.4);
+  min-height: 1.2em;
+}
+canvas {
+  display: block;
+  touch-action: none;
+  flex: 1;
+  max-width: 100%;
+}
+</style>
+</head>
+<body>
+
+<button id="backBtn" onclick="history.back()">← Back</button>
+
+<div id="ui">
+  <div id="problem">Loading...</div>
+  <div id="answers"></div>
+  <div id="scoreBar">Score: 0</div>
+  <div id="feedback"></div>
+  <div id="shootHint"></div>
+</div>
+
+<canvas id="game"></canvas>
+
+<script>
+var canvas = document.getElementById('game');
+var ctx = canvas.getContext('2d');
+
+// Game state
+var ball = { x: 0, y: 0, vx: 0, vy: 0, r: 14 };
+var hoop = { x: 0, y: 0, w: 70 };
+var gravity = 0.4;
+var score = 0;
+var answerCorrect = false; // must answer correctly before shooting
+var ballFlying = false;
+var dragStart = null;
+var W, H;
+
+// Math problem
+var correctAnswer = 0;
+var answersActive = true;
+
+function resize() {
+  var uiH = document.getElementById('ui').offsetHeight;
+  W = canvas.width  = window.innerWidth;
+  H = canvas.height = window.innerHeight - uiH;
+  ball.x = W / 2;
+  ball.y = H - 60;
+  hoop.x = W / 2;
+  hoop.y = H * 0.25;
+  if (!ballFlying) { ball.vx = 0; ball.vy = 0; }
+}
+
+function placeHoop() {
+  var margin = hoop.w / 2 + 20;
+  hoop.x = margin + Math.random() * (W - margin * 2);
+  hoop.y = H * 0.15 + Math.random() * (H * 0.25);
+}
+
+function newProblem() {
+  var a = Math.floor(Math.random() * 10) + 1;
+  var b = Math.floor(Math.random() * 10) + 1;
+  correctAnswer = a * b;
+  document.getElementById('problem').textContent = a + ' × ' + b + ' = ?';
+
+  // Build 4 answer options
+  var opts = [correctAnswer];
+  var tries = 0;
+  while (opts.length < 4 && tries < 100) {
+    tries++;
+    var w = correctAnswer + Math.floor(Math.random() * 30) - 15;
+    if (w > 0 && opts.indexOf(w) === -1) opts.push(w);
+  }
+  opts.sort(function() { return Math.random() - 0.5; });
+
+  var container = document.getElementById('answers');
+  container.innerHTML = '';
+  answersActive = true;
+  answerCorrect = false;
+  document.getElementById('shootHint').textContent = '';
+  document.getElementById('feedback').textContent = '';
+
+  opts.forEach(function(v) {
+    var btn = document.createElement('button');
+    btn.className = 'abtn';
+    btn.textContent = v;
+    btn.onclick = function() { checkAnswer(v, btn); };
+    container.appendChild(btn);
+  });
+}
+
+function checkAnswer(v, btn) {
+  if (!answersActive) return;
+  if (v === correctAnswer) {
+    btn.classList.add('correct');
+    answersActive = false;
+    answerCorrect = true;
+    document.getElementById('feedback').textContent = 'Correct! Now shoot! 🏀';
+    document.getElementById('shootHint').textContent = 'Drag the ball toward the hoop';
+    // Disable all buttons
+    document.querySelectorAll('.abtn').forEach(function(b) { b.disabled = true; });
+  } else {
+    btn.classList.add('wrong');
+    btn.disabled = true;
+    // Show correct on wrong attempt
+    document.getElementById('feedback').textContent = 'Not quite — try again!';
+    // Flash red then reset
+    setTimeout(function() { btn.classList.remove('wrong'); btn.disabled = false; document.getElementById('feedback').textContent = ''; }, 800);
+  }
+}
+
+// ── DRAWING ──────────────────────────────────────────────────────────────────
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+
+  // Background gradient
+  var bg = ctx.createLinearGradient(0, 0, 0, H);
+  bg.addColorStop(0, '#0b1f3a');
+  bg.addColorStop(1, '#1c3f75');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, W, H);
+
+  // Court circle
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(W / 2, H, W * 0.42, Math.PI, 0);
+  ctx.stroke();
+
+  // Aim guide (only when answer correct and ball not flying)
+  if (answerCorrect && !ballFlying) {
+    ctx.strokeStyle = 'rgba(255,220,80,0.3)';
+    ctx.setLineDash([8, 12]);
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(ball.x, ball.y);
+    ctx.lineTo(hoop.x, hoop.y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Backboard
+  ctx.fillStyle = 'rgba(255,255,255,0.15)';
+  ctx.fillRect(hoop.x - 4, hoop.y - 50, 8, 44);
+
+  // Rim
+  ctx.fillStyle = '#e85d04';
+  ctx.fillRect(hoop.x - hoop.w / 2, hoop.y, hoop.w, 7);
+
+  // Net
+  ctx.strokeStyle = 'rgba(255,255,255,0.45)';
+  ctx.lineWidth = 1.5;
+  for (var i = 0; i <= 4; i++) {
+    ctx.beginPath();
+    ctx.moveTo(hoop.x - hoop.w/2 + i*(hoop.w/4), hoop.y + 7);
+    ctx.lineTo(hoop.x - hoop.w/4 + i*(hoop.w/8), hoop.y + 32);
+    ctx.stroke();
+  }
+
+  // Ball
+  var g = ctx.createRadialGradient(ball.x - 5, ball.y - 5, 2, ball.x, ball.y, ball.r);
+  g.addColorStop(0, '#ff9a4a');
+  g.addColorStop(1, '#c45200');
+  ctx.fillStyle = g;
+  ctx.beginPath();
+  ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+  ctx.fill();
+  // Ball lines
+  ctx.strokeStyle = 'rgba(0,0,0,0.25)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(ball.x - ball.r, ball.y); ctx.lineTo(ball.x + ball.r, ball.y); ctx.stroke();
+  ctx.beginPath(); ctx.arc(ball.x, ball.y, ball.r * 0.55, 0.3, Math.PI - 0.3); ctx.stroke();
+}
+
+// ── PHYSICS ──────────────────────────────────────────────────────────────────
+function update() {
+  if (!ballFlying) return;
+  ball.x += ball.vx;
+  ball.vy += gravity;
+  ball.y += ball.vy;
+
+  // Wall bounce
+  if (ball.x - ball.r < 0)  { ball.x = ball.r;  ball.vx = Math.abs(ball.vx) * 0.6; }
+  if (ball.x + ball.r > W)  { ball.x = W - ball.r; ball.vx = -Math.abs(ball.vx) * 0.6; }
+
+  // Score: ball passes through hoop
+  if (ball.y > hoop.y - 5 && ball.y < hoop.y + 30 &&
+      Math.abs(ball.x - hoop.x) < hoop.w / 2 - ball.r * 0.5) {
+    score++;
+    document.getElementById('scoreBar').textContent = 'Score: ' + score;
+    document.getElementById('feedback').textContent = '🎉 Basket!';
+    resetBall();
+    placeHoop();
+    setTimeout(function() { newProblem(); }, 600);
+    return;
+  }
+
+  // Ball fell off screen
+  if (ball.y > H + 60) {
+    document.getElementById('feedback').textContent = 'Miss! Try again 🏀';
+    resetBall();
+    // Keep same problem, let them shoot again
+    answerCorrect = true;
+    document.getElementById('shootHint').textContent = 'Drag the ball toward the hoop';
+    document.querySelectorAll('.abtn').forEach(function(b) { b.disabled = true; });
+  }
+}
+
+function resetBall() {
+  ballFlying = false;
+  ball.x = W / 2;
+  ball.y = H - 60;
+  ball.vx = 0;
+  ball.vy = 0;
+  dragStart = null;
+}
+
+function loop() {
+  update();
+  draw();
+  requestAnimationFrame(loop);
+}
+
+// ── TOUCH / MOUSE CONTROLS ───────────────────────────────────────────────────
+function getPos(e) {
+  var rect = canvas.getBoundingClientRect();
+  if (e.touches) {
+    return { x: e.touches[0].clientX - rect.left, y: e.touches[0].clientY - rect.top };
+  }
+  return { x: e.clientX - rect.left, y: e.clientY - rect.top };
+}
+
+canvas.addEventListener('touchstart', function(e) {
+  e.preventDefault();
+  if (!answerCorrect || ballFlying) return;
+  dragStart = getPos(e);
+}, { passive: false });
+
+canvas.addEventListener('touchend', function(e) {
+  e.preventDefault();
+  if (!dragStart || !answerCorrect || ballFlying) return;
+  var pos = { x: e.changedTouches[0].clientX - canvas.getBoundingClientRect().left,
+              y: e.changedTouches[0].clientY - canvas.getBoundingClientRect().top };
+  shoot(dragStart, pos);
+  dragStart = null;
+}, { passive: false });
+
+canvas.addEventListener('mousedown', function(e) {
+  if (!answerCorrect || ballFlying) return;
+  dragStart = getPos(e);
+});
+canvas.addEventListener('mouseup', function(e) {
+  if (!dragStart || !answerCorrect || ballFlying) return;
+  shoot(dragStart, getPos(e));
+  dragStart = null;
+});
+
+function shoot(from, to) {
+  // Drag from ball downward → shoots upward
+  // Direction is OPPOSITE of drag (like pulling back a slingshot)
+  var dx = from.x - to.x;
+  var dy = from.y - to.y;
+
+  // If drag is tiny, aim at hoop instead
+  if (Math.abs(dx) < 5 && Math.abs(dy) < 5) {
+    dx = ball.x - hoop.x;
+    dy = ball.y - hoop.y;
+  }
+
+  var dist = Math.sqrt(dx * dx + dy * dy);
+  var power = Math.min(dist * 0.065, 16);
+  ball.vx = (dx / dist) * power;
+  ball.vy = (dy / dist) * power - 2; // slight upward bias
+  ballFlying = true;
+  answerCorrect = false;
+  document.getElementById('shootHint').textContent = '';
+}
+
+// ── INIT ─────────────────────────────────────────────────────────────────────
+window.addEventListener('resize', function() { resize(); });
+resize();
+placeHoop();
+newProblem();
+loop();
+</script>
+
+</body>
+</html>
